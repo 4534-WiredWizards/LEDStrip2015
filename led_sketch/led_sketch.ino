@@ -18,8 +18,8 @@ const int IR = 0; //ANALOG
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 boolean solid = 1; // If the lights show a solid color (false for animations)
-boolean isDisabled = 0; //true when robot is disabled
-boolean isAuto = 1;  //true when robot is in autonomus mode
+boolean isDisabled = 1; //true when robot is disabled
+boolean isAuto = 0;  //true when robot is in autonomus mode
 boolean isTeleop = 0;  //true when robot is in teleoperated mode
 int incoming;        // handles incoming bytes
 boolean isAscending = 1; // for autonomous processing
@@ -100,7 +100,7 @@ void loop() {
   int dis = readDistance();
   if (isDisabled == 1) {
    //this is the original fade in/out animation code for disabled.
-   r = i;
+ /*  r = i;
    g = i;
    b = i;
       
@@ -113,14 +113,14 @@ void loop() {
      i = i + 4;
    if (isAscending == 0)
      i = i - 4;
+  */
   
-  /*
     r=0;
     g=0;                // this shows a pretty animation.
     b=0;
-  rainbow(5);
+  rainbowCycleMod(5);
   solid = 0;
-  */
+  
   }
   if (isAuto == 1) {
     r=30;
@@ -157,14 +157,18 @@ void loop() {
     b=50;
     r=0;
     } else {
-    b=0;
-    r=50;
+      solid = 0;
+      redCycleMod(5);
+      /*
+      r=50;
+      b=0
+      */
     }
   }
   }
   
-  if (averaging) {
-  if (s > 0) {
+  if (averaging) {      // routine does not work. THIS LINE MUST STILL BE HERE!
+  if (s > 0) {          // DO NOT DELETE!
     d[s-1] = dis;
     s--;
     delay(interval);
@@ -186,10 +190,8 @@ void loop() {
   
   pixels.show();
   solid = 1;
-  if (average >= 50) {
-  Serial.print ("NOTED!      ");
-  }
-  Serial.println (average);
+  Serial.print (average);
+  Serial.println (";");
   average = 0;
   delay(interval);
   }
@@ -206,12 +208,10 @@ void loop() {
   
   pixels.show();
   solid = 1;
-  if (dis >= 50) {
-  Serial.print ("NOTED!      ");
-  }
-  Serial.println (dis);
+  Serial.print (dis);
+  Serial.println (";");
   average = dis;
-  delay(samples * interval);
+  delay(10);
 }
 }
 int readDistance()
@@ -274,6 +274,61 @@ void theaterChaseRainbow(uint8_t wait) {
     }
   }
 }
+
+void redCycleMod(uint8_t wait) {
+  uint16_t i, j;
+  
+  for(j=0; j<100; j++) { 
+    for(i=0; i< pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, pixels.Color(255, i,i));
+    }
+    pixels.show();
+    if (!Serial.available())
+    delay(wait);
+    else 
+    (isDisabled = 0);
+  }
+}
+
+void rainbowCycleMod(uint8_t wait) {
+  uint16_t i, j;
+  
+  for(j=0; j<256; j++) { 
+    for(i=0; i< pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+    }
+    pixels.show();
+    if (!Serial.available())
+    delay(wait);
+    else 
+    (isDisabled = 0);
+  }
+}
+
+uint32_t WheelMod(byte WheelPos) {
+  if(WheelPos < 85) {
+   return pixels.Color(WheelPos * 3, 100 - WheelPos * 3, 0);
+  } else if(WheelPos < 66) {
+   WheelPos -= 170;
+   return pixels.Color(100 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+   WheelPos -= 66;
+   return pixels.Color(0, WheelPos * 3, 100 - WheelPos * 3);
+  }
+}
+
+void rainbowCycle(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+    }
+    pixels.show();
+    delay(wait);
+  }
+}
+
 uint32_t Wheel(byte WheelPos) {
   if(WheelPos < 85) {
    return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
