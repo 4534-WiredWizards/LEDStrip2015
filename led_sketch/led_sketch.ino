@@ -21,6 +21,7 @@ boolean solid = 1; // If the lights show a solid color (false for animations)
 boolean isDisabled = 1; //true when robot is disabled
 boolean isAuto = 0;  //true when robot is in autonomus mode
 boolean isTeleop = 0;  //true when robot is in teleoperated mode
+boolean isSet = 0;
 int incoming;        // handles incoming bytes
 boolean isAscending = 1; // for autonomous processing
 int i = 100; // for autonomous processing
@@ -35,6 +36,8 @@ const int samples = 5; // takes (5) samples, averages them and uses that result.
 int s = samples; // temp variable for averaging (with above two)
 int d[] = {0,0,0,0,0}; // temp distance variable
 int average = 0;
+
+boolean allianceSet = 0;
 
 void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
@@ -56,27 +59,32 @@ void loop() {
       isDisabled = 0;
       isAuto = 1;
       isTeleop = 0;
-      Serial.println ("AUTONOMOUS ENABLED!");
+      //Serial.println ("AUTONOMOUS ENABLED!");
     }
     if (incoming == 't') {
       isDisabled = 0;
       isAuto = 0;
       isTeleop = 1;
-      Serial.println ("TELEOP ENABLED!");
+      //Serial.println ("TELEOP ENABLED!");
     }
     if (incoming == 'd') {
       isDisabled = 1;
       isAuto = 0;
       isTeleop = 0;
-      Serial.println ("ROBOT DISABLED!");
+      isSet = 0;
+      //Serial.println ("ROBOT DISABLED!");
     }
     if (incoming == 'b') {
       blueAlliance = 1;
-      Serial.println ("Welcome to the blue alliance!");
+      allianceSet = true;
+      isSet = 1;
+      //Serial.println ("Welcome to the blue alliance!");
     }
     if (incoming == 'r') {
       blueAlliance = 0;
-      Serial.println ("Welcome to the red alliance!");
+      allianceSet = true;
+      isSet = 1;
+      //Serial.println ("Welcome to the red alliance!");
     }
   }
   int r,g,b;
@@ -97,8 +105,10 @@ void loop() {
     increment = 1;
   }
   */
+  
   int dis = readDistance();
   if (isDisabled == 1) {
+    if(!isSet){
    //this is the original fade in/out animation code for disabled.
  /*  r = i;
    g = i;
@@ -120,7 +130,15 @@ void loop() {
     b=0;
   rainbowCycleMod(5);
   solid = 0;
-  
+    } else {
+     if (blueAlliance) {
+    fancyAnimation(pixels.Color(0, 0, 50), 5);
+    solid = 0;
+     } else {
+    fancyAnimation(pixels.Color(50, 0, 0), 5);
+    solid = 0;
+     }
+    }
   }
   if (isAuto == 1) {
     r=30;
@@ -157,14 +175,17 @@ void loop() {
     b=50;
     r=0;
     } else {
-      solid = 0;
-      redCycleMod(5);
-      /*
       r=50;
-      b=0
-      */
-    }
+      b=0;
+      }
   }
+  }
+  if (allianceSet) {
+    if (blueAlliance) {
+    colorWipe(pixels.Color(0, 0, 255), 5); // Blue
+   } else {
+    colorWipe(pixels.Color(255, 0, 0), 5); // Red
+    }
   }
   
   if (averaging) {      // routine does not work. THIS LINE MUST STILL BE HERE!
@@ -223,6 +244,17 @@ int readDistance()
     dist = constrain(dist, 0, 255);    //Constrain it
     return dist;                       //Return scaled distance
 }
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, c);
+      pixels.show();
+      delay(wait);
+      allianceSet = 0;
+      isDisabled = 1;
+      // isSet = 1;
+  }
+}
+
 /*
 void theaterChasemodified() {
   // animation from http://www.tweaking4all.com/hardware/arduino/arduino-ws2812-led/#adafruit_neopixel
@@ -244,6 +276,42 @@ void theaterChasemodified() {
     }
 }
 */
+void fancyAnimation(uint32_t c, uint8_t wait) {
+  int g = 14;
+  int s = 0;
+  int d = 90;
+  for(uint16_t q=0; q<pixels.numPixels(); q++) {
+  for(uint16_t i=0; i<g; i++) {
+    s = i + q;
+    if (s >= 180)
+    s -= 180;
+    
+    if (s >= 90)
+    d = s - 90;
+    else 
+    d = s + 90;
+    
+      pixels.setPixelColor(s, c);
+      pixels.setPixelColor(d, c);
+      
+   }
+   
+   if (!Serial.available()) {
+        delay(wait);
+        pixels.show();
+        pixels.setPixelColor(q, 0,0,0);
+        if (q >= 90)
+        pixels.setPixelColor(q - 90, 0,0,0);
+        else 
+        pixels.setPixelColor(q + 90, 0,0,0);
+        
+        
+   } else { 
+        (isDisabled = 0);
+ }
+}
+}
+
 void theaterChase(uint32_t c, uint8_t wait) {
     for (int q=0; q < 3; q++) {
       for (int l=0; l < 180; l=l+3) {
@@ -275,20 +343,7 @@ void theaterChaseRainbow(uint8_t wait) {
   }
 }
 
-void redCycleMod(uint8_t wait) {
-  uint16_t i, j;
-  
-  for(j=0; j<100; j++) { 
-    for(i=0; i< pixels.numPixels(); i++) {
-      pixels.setPixelColor(i, pixels.Color(255, i,i));
-    }
-    pixels.show();
-    if (!Serial.available())
-    delay(wait);
-    else 
-    (isDisabled = 0);
-  }
-}
+
 
 void rainbowCycleMod(uint8_t wait) {
   uint16_t i, j;
