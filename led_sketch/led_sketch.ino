@@ -108,7 +108,7 @@ void loop() {
   
   int dis = readDistance();
   if (isDisabled == 1) {
-    if(!isSet){
+    if(!isSet){        //calls if alliance color is not set
    //this is the original fade in/out animation code for disabled.
  /*  r = i;
    g = i;
@@ -130,12 +130,12 @@ void loop() {
     b=0;
   rainbowCycleMod(5);
   solid = 0;
-    } else {
+    } else {                   // if the alliance color is set during disabled, 
      if (blueAlliance) {
-    fancyAnimation(pixels.Color(0, 0, 50), 5);
+    fancyAnimation(pixels.Color(0, 0, 50), 5, 6); // this is the animation for when the alliance is set.
     solid = 0;
      } else {
-    fancyAnimation(pixels.Color(50, 0, 0), 5);
+    fancyAnimation(pixels.Color(50, 0, 0), 5, 6);
     solid = 0;
      }
     }
@@ -152,9 +152,9 @@ void loop() {
     g=50;
     b=50;
   } else if (average >= 50) {
-    if (blueAlliance) {
+    if (blueAlliance) {              // defaults to blue if not set.
     /*
-    theaterChase(pixels.Color(0,50,50),50);
+    theaterChase(pixels.Color(0,50,50),50);      // omitted due to use of delays...
     solid = 0;
     */
     r=00;
@@ -180,7 +180,7 @@ void loop() {
       }
   }
   }
-  if (allianceSet) {
+  if (allianceSet) {                 // calls when alliance color is first set. Then goes to isSet function, see above.
     if (blueAlliance) {
     colorWipe(pixels.Color(0, 0, 255), 5); // Blue
    } else {
@@ -259,13 +259,13 @@ void colorWipe(uint32_t c, uint8_t wait) {
 void theaterChasemodified() {
   // animation from http://www.tweaking4all.com/hardware/arduino/arduino-ws2812-led/#adafruit_neopixel
         if (q < 3) {
-      while (l < 180) {
+      while (l < pixels.numPixels()) {
         pixels.setPixelColor(l+q, 0);        //turn every third pixel off
       l=l+3;
       }
       q++;
       i=0;
-        while (l < 180) {
+        while (l < pixels.numPixels()) {
         pixels.setPixelColor(l+q, pixels.Color(0, 50, 50));    //turn every third pixel on
       l=l+3;
     }
@@ -276,51 +276,49 @@ void theaterChasemodified() {
     }
 }
 */
-void fancyAnimation(uint32_t c, uint8_t wait) {
+void fancyAnimation(uint32_t c, uint8_t wait, byte groups) {
   int g = 14;
-  int s = 0;
-  int d = 90;
+  int sum = 0;
+  int v = pixels.numPixels() / groups;
   for(uint16_t q=0; q<pixels.numPixels(); q++) {
-  for(uint16_t i=0; i<g; i++) {
-    s = i + q;
-    if (s >= 180)
-    s -= 180;
-    
-    if (s >= 90)
-    d = s - 90;
-    else 
-    d = s + 90;
-    
-      pixels.setPixelColor(s, c);
-      pixels.setPixelColor(d, c);
-      
-   }
-   
-   if (!Serial.available()) {
-        delay(wait);
+    for(uint16_t i=0; i<g; i++) {
+      for(uint16_t n = 0; n < groups; n++) {
+        sum = (i + q) + (n * v);
+        while (sum > pixels.numPixels()) {
+            sum = sum - pixels.numPixels();
+          }
+        pixels.setPixelColor(sum, c);
+        
+      }
+    }
+    if(!Serial.available()) {
         pixels.show();
-        pixels.setPixelColor(q, 0,0,0);
-        if (q >= 90)
-        pixels.setPixelColor(q - 90, 0,0,0);
-        else 
-        pixels.setPixelColor(q + 90, 0,0,0);
-        
-        
-   } else { 
-        (isDisabled = 0);
- }
+        for (uint16_t n = 0; n < groups; n++) {
+          sum = q + (n * v);
+          
+          while (sum > pixels.numPixels()) {
+            sum = sum - pixels.numPixels();
+          }
+          pixels.setPixelColor(sum, pixels.Color(0,0,0));
+                    
+        }
+        delay(wait);
+    } else {
+      isDisabled = 0;
+    }
+  }
 }
-}
+
 
 void theaterChase(uint32_t c, uint8_t wait) {
     for (int q=0; q < 3; q++) {
-      for (int l=0; l < 180; l=l+3) {
+      for (int l=0; l < pixels.numPixels(); l=l+3) {
         pixels.setPixelColor(l+q, c);    //turn every third pixel on
       }
       pixels.show();
 
 
-      for (int l=0; l < 180; l=l+3) {
+      for (int l=0; l < pixels.numPixels(); l=l+3) {
         pixels.setPixelColor(l+q, 0);        //turn every third pixel off
     }
   }
@@ -352,11 +350,12 @@ void rainbowCycleMod(uint8_t wait) {
     for(i=0; i< pixels.numPixels(); i++) {
       pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
     }
-    pixels.show();
-    if (!Serial.available())
-    delay(wait);
-    else 
-    (isDisabled = 0);
+   if(!Serial.available()) {
+        pixels.show();
+        delay(wait);
+    } else {
+      isDisabled = 0;
+    }
   }
 }
 
