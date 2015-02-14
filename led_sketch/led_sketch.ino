@@ -284,7 +284,7 @@ void fancyAnimation(uint32_t c, uint8_t wait, byte groups) {
     for(uint16_t i=0; i<g; i++) {
       for(uint16_t n = 0; n < groups; n++) {
         sum = (i + q) + (n * v);
-        while (sum > pixels.numPixels()) {
+        while (sum >= pixels.numPixels()) {
             sum = sum - pixels.numPixels();
           }
         pixels.setPixelColor(sum, c);
@@ -296,7 +296,7 @@ void fancyAnimation(uint32_t c, uint8_t wait, byte groups) {
         for (uint16_t n = 0; n < groups; n++) {
           sum = q + (n * v);
           
-          while (sum > pixels.numPixels()) {
+          while (sum >= pixels.numPixels()) {
             sum = sum - pixels.numPixels();
           }
           pixels.setPixelColor(sum, pixels.Color(0,0,0));
